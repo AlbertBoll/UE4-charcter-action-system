@@ -3,4 +3,4 @@ By using Unreal engine 4, building character action system, including character'
 ## Project Section
 * 01 Prepare environmental assets.
 * 02 Version Control and ignore Unreal derived files.
-*
+* 03 Project has reached quite far. So the current progress is that character could destroy the destructible mesh. Character's two fist melee attack actions were created. Creating Unreal Datatable to store the character's animation montages more effectively.  
