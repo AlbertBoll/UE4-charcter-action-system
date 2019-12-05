@@ -103,6 +103,9 @@ class ADestructible_demoCharacter : public ACharacter
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Audio, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* PunchThrowSoundCue;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	float AnimationBlendAmount;
 
 public:
 	ADestructible_demoCharacter();
@@ -191,6 +194,7 @@ private:
 	* @param FString the message for display
 	*/
 	//friend class PunchThrowAnimNotify;
+	FPlayerAttackMontage* AttackMontage;
 	UAudioComponent* PunchAudioComponent;
 	UAudioComponent* PunchThrowAudioComponent;
 	friend class UPunchThrowAnimNotify;

@@ -167,7 +167,7 @@ void ADestructible_demoCharacter::AttackInput()
 
 	if (PlayerAttackDataTable) {
 		static const FString contextString(TEXT("Player attack montage context"));
-		FPlayerAttackMontage* AttackMontage = PlayerAttackDataTable->FindRow<FPlayerAttackMontage>(FName(TEXT("Punch1")), contextString, true);
+		AttackMontage = PlayerAttackDataTable->FindRow<FPlayerAttackMontage>(FName(TEXT("Punch1")), contextString, true);
 		if (AttackMontage) {
 			int MontageSectionIndex = rand() % (AttackMontage->AnimSectionCount) + 1;
 			FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
@@ -181,8 +181,18 @@ void ADestructible_demoCharacter::OnAttackHit(UPrimitiveComponent* HitComponent,
 	Log(ELogLevel::WARNING, Hit.GetActor()->GetName());
 	if (PunchAudioComponent && !PunchAudioComponent->IsPlaying())
 	{
+		if (!PunchAudioComponent->IsActive())
+			PunchAudioComponent->Activate(true);
 		PunchAudioComponent->SetPitchMultiplier(FMath::RandRange(1.f, 1.3f));
 		PunchAudioComponent->Play(0.f);
+	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance) {
+		/**Stop provides some sort of solution of mesh overlaping, but not satisfied**/
+		//AnimInstance->Montage_Stop(.5f, AttackMontage->MeleeFistAttackMontage);
+		//AnimInstance->Montage_Pause(AttackMontage->MeleeFistAttackMontage);
+		AnimInstance->Montage_Play(AttackMontage->MeleeFistAttackMontage, AnimationBlendAmount, EMontagePlayReturnType::Duration, AnimInstance->Montage_GetPosition(AttackMontage->MeleeFistAttackMontage), true);
 	}
 
 }
