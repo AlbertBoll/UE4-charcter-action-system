@@ -101,6 +101,9 @@ class ADestructible_demoCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Audio, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* PunchSoundCue;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Audio, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* PunchThrowSoundCue;
+
 public:
 	ADestructible_demoCharacter();
 
@@ -179,14 +182,21 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	//UAudioComponent* PunchThrowAudioComponent;
+
 private:
 	/**
 	* Log - prints a message to all the log outputs with a specific color
 	* @param LogLevel {@see ELogLevel} affects color of log
 	* @param FString the message for display
 	*/
-
+	//friend class PunchThrowAnimNotify;
 	UAudioComponent* PunchAudioComponent;
+	UAudioComponent* PunchThrowAudioComponent;
+	friend class UPunchThrowAnimNotify;
+	friend class UPunchThrowAnimNotifyState;
+
+
 	void Log(ELogLevel LogLevel, FString Message);
 	FMeleeCollisionProfile MeleeCollisionProfile;
 	

@@ -70,7 +70,13 @@ ADestructible_demoCharacter::ADestructible_demoCharacter()
 		//PunchAudioComponent->SetSound(PunchSoundCue);
 	}
 
-
+	static ConstructorHelpers::FObjectFinder<USoundCue>PunchThrowSoundCueObject(TEXT("SoundCue'/Game/SFX/PunchThrowSoundCue.PunchThrowSoundCue'"));
+	if (PunchThrowSoundCueObject.Succeeded())
+	{
+		PunchThrowSoundCue = PunchThrowSoundCueObject.Object;
+		PunchThrowAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("PunchThrowAudioComponent"));
+		PunchThrowAudioComponent->SetupAttachment(RootComponent);
+	}
 
 	LeftFistCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftFistCollisionBox"));
 	RightFistCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightFistCollisionBox"));
@@ -101,6 +107,12 @@ void ADestructible_demoCharacter::BeginPlay()
 		PunchAudioComponent->SetSound(PunchSoundCue);
 	}
 
+	if (PunchThrowAudioComponent && PunchThrowSoundCue)
+	{
+		PunchThrowAudioComponent->SetSound(PunchThrowSoundCue);
+	}
+
+
 	if (PlayerAttackDataTable)
 	{
 		FPlayerAttackMontage AttackMontage;
@@ -109,6 +121,8 @@ void ADestructible_demoCharacter::BeginPlay()
 		AttackMontage.Description = "Create from begin play";
 		PlayerAttackDataTable->AddRow(FName(TEXT("New Row")), AttackMontage);
 	}
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////
