@@ -7,7 +7,7 @@
 
 void UPunchThrowAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 4.5f, FColor::Orange, __FUNCTION__);
+	//GEngine->AddOnScreenDebugMessage(-1, 4.5f, FColor::Orange, __FUNCTION__);
 	/*if (MeshComp && MeshComp->GetOwner()) {
 		ADestructible_demoCharacter* main = Cast<ADestructible_demoCharacter>(MeshComp->GetOwner());
 		if (main&& !main->PunchThrowAudioComponent->IsPlaying()) {

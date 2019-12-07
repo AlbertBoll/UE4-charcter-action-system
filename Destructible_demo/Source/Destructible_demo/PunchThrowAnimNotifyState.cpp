@@ -10,6 +10,7 @@ void UPunchThrowAnimNotifyState::NotifyBegin(USkeletalMeshComponent* MeshComp, U
 	if (MeshComp && MeshComp->GetOwner()) {
 		ADestructible_demoCharacter* main = Cast<ADestructible_demoCharacter>(MeshComp->GetOwner());
 		if (main && !main->PunchThrowAudioComponent->IsPlaying()) {
+			main->PunchThrowAudioComponent->SetPitchMultiplier(FMath::RandRange(1.f, 1.3f));
 			main->PunchThrowAudioComponent->Play(0.f);
 		}
 	}

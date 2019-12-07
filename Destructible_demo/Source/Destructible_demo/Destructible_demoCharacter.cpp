@@ -55,7 +55,7 @@ ADestructible_demoCharacter::ADestructible_demoCharacter()
 		FistMeleeAttackMontage = MeleeFistAttackMontageObject.Object;
 	}
 
-	static ConstructorHelpers::FObjectFinder<UDataTable>PlayerAttackMontageDataTable(TEXT("DataTable'/Game/DataTable/PlayerAttckMontageDataTable.PlayerAttckMontageDataTable'"));
+	static ConstructorHelpers::FObjectFinder<UDataTable>PlayerAttackMontageDataTable(TEXT("DataTable'/Game/DataTable/playerAttackMontageDataTable.playerAttackMontageDataTable'"));
 	if (PlayerAttackMontageDataTable.Succeeded())
 	{
 		PlayerAttackDataTable = PlayerAttackMontageDataTable.Object;
@@ -78,30 +78,39 @@ ADestructible_demoCharacter::ADestructible_demoCharacter()
 		PunchThrowAudioComponent->SetupAttachment(RootComponent);
 	}
 
-	LeftFistCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftFistCollisionBox"));
-	RightFistCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightFistCollisionBox"));
-	LeftFistCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("Fist_L_Collision"));
-	RightFistCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("Fist_R_Collision"));
-	
-	//LeftFistCollisionBox->SetCollisionProfileName("NoCollision");
-	LeftFistCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
-	//RightFistCollisionBox->SetCollisionProfileName("NoCollision");
-	RightFistCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
+	LeftMeleeCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftMeleeCollisionBox"));
+	RightMeleeCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightMeleeCollisionBox"));
 
-	LeftFistCollisionBox->SetNotifyRigidBodyCollision(false);
-	RightFistCollisionBox->SetNotifyRigidBodyCollision(false);
-	
+	/**Attach box to fist**/
+	//LeftMeleeCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("Fist_L_Collision"));
+	//RightMeleeCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("Fist_R_Collision"));
+
+	/**Attach box to feet**/
+
+	//LeftMeleeCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("Foot_L_Collision"));
+	//RightMeleeCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("Foot_R_Collision"));
+
+	//LeftMeleeCollisionBox->SetCollisionProfileName("NoCollision");
+	LeftMeleeCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
+	//RightMeleeCollisionBox->SetCollisionProfileName("NoCollision");
+	RightMeleeCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
+
+	LeftMeleeCollisionBox->SetNotifyRigidBodyCollision(false);
+	RightMeleeCollisionBox->SetNotifyRigidBodyCollision(false);
+	LineTraceType = ELineTraceType::CAMERA_SINGLE;
+	LineTraceDistance = 100.f;
+	LineTraceSpread = 10.f;
 }
 
 void ADestructible_demoCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	LeftFistCollisionBox->OnComponentHit.AddDynamic(this, &ADestructible_demoCharacter::OnAttackHit);
-	RightFistCollisionBox->OnComponentHit.AddDynamic(this, &ADestructible_demoCharacter::OnAttackHit);
-	//LeftFistCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackBeginOverlap);
-	//LeftFistCollisionBox->OnComponentEndOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackEndOverlap);
-	//RightFistCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackBeginOverlap);
-	//RightFistCollisionBox->OnComponentEndOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackEndOverlap);
+	LeftMeleeCollisionBox->OnComponentHit.AddDynamic(this, &ADestructible_demoCharacter::OnAttackHit);
+	RightMeleeCollisionBox->OnComponentHit.AddDynamic(this, &ADestructible_demoCharacter::OnAttackHit);
+	//LeftMeleeCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackBeginOverlap);
+	//LeftMeleeCollisionBox->OnComponentEndOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackEndOverlap);
+	//RightMeleeCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackBeginOverlap);
+	//RightMeleeCollisionBox->OnComponentEndOverlap.AddDynamic(this, &ADestructible_demoCharacter::OnAttackEndOverlap);
 	if (PunchAudioComponent&& PunchSoundCue)
 	{
 		PunchAudioComponent->SetSound(PunchSoundCue);
@@ -113,14 +122,14 @@ void ADestructible_demoCharacter::BeginPlay()
 	}
 
 
-	if (PlayerAttackDataTable)
+	/*if (PlayerAttackDataTable)
 	{
 		FPlayerAttackMontage AttackMontage;
 		AttackMontage.MeleeFistAttackMontage = NULL;
 		AttackMontage.AnimSectionCount = 10;
 		AttackMontage.Description = "Create from begin play";
 		PlayerAttackDataTable->AddRow(FName(TEXT("New Row")), AttackMontage);
-	}
+	}*/
 
 
 }
@@ -153,21 +162,111 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ADestructible_demoCharacter::OnResetVR);
 
-	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ADestructible_demoCharacter::AttackInput);
-	PlayerInputComponent->BindAction("Attack", IE_Released, this, &ADestructible_demoCharacter::AttackEnd);
-
+	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &ADestructible_demoCharacter::PunchAttack);
+	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &ADestructible_demoCharacter::AttackEnd);
+	PlayerInputComponent->BindAction("Kick", IE_Pressed, this, &ADestructible_demoCharacter::KickAttack);
+	PlayerInputComponent->BindAction("FireLineTrace", IE_Pressed, this, &ADestructible_demoCharacter::FireLineTrace);
 }
 
-void ADestructible_demoCharacter::AttackInput()
+void ADestructible_demoCharacter::SetIsKeyboardEnabled(bool Enabled)
+{
+	IsKeyboardEnabled = Enabled;
+}
+
+void ADestructible_demoCharacter::FireLineTrace()
 {
 	Log(ELogLevel::INFO, __FUNCTION__);
-	int MontageSectionIndex = rand() % 3 + 1;
-	FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
-	PlayAnimMontage(FistMeleeAttackMontage, 1.2f, FName(*MontageSection));
+
+	FVector Start, End;
+
+	const float SpreadAngle = FMath::DegreesToRadians(0.5f * LineTraceSpread);
+	if (LineTraceType == ELineTraceType::CAMERA_SINGLE || LineTraceType==ELineTraceType::CAMERA_SPREAD)
+	{
+		FVector Camera_Loc = FollowCamera->GetComponentLocation();
+		FRotator Camera_Rot = FollowCamera->GetComponentRotation();
+		Start = Camera_Loc;
+		if (LineTraceType == ELineTraceType::CAMERA_SPREAD)
+		{
+			End = Start + FMath::VRandCone(Camera_Rot.Vector(), SpreadAngle, SpreadAngle)*LineTraceDistance;
+		}
+		else
+			End = Start + Camera_Rot.Vector() * LineTraceDistance;
+	}
+
+	else if (LineTraceType == ELineTraceType::PLAYER_SINGLE || LineTraceType == ELineTraceType::PLAYER_SPREAD)
+	{
+		FVector PlayerEyes_Loc; 
+		FRotator PlayerEyes_Rot;
+		GetActorEyesViewPoint(PlayerEyes_Loc, PlayerEyes_Rot);
+		Start = PlayerEyes_Loc;
+		if (LineTraceType == ELineTraceType::PLAYER_SPREAD)
+		{
+			End = Start + FMath::VRandCone(PlayerEyes_Rot.Vector(), SpreadAngle, SpreadAngle)*LineTraceDistance;
+		}
+		else
+			End = Start + PlayerEyes_Rot.Vector() * LineTraceDistance;
+	}
+
+	FHitResult HitResult = FHitResult(ForceInit);
+	FCollisionQueryParams TraceParams(FName(TEXT("LineTraceParameters")), true, nullptr);
+	TraceParams.bTraceComplex = true;
+	TraceParams.bReturnPhysicalMaterial = true;
+
+	bool bLineHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_GameTraceChannel3, TraceParams);
+	if (bLineHit)
+	{
+		Log(ELogLevel::INFO, "We hit something");
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 5.f, ECC_WorldStatic, 1.f);
+		Log(ELogLevel::INFO, HitResult.Actor->GetName());
+		Log(ELogLevel::INFO, FString::SanitizeFloat(HitResult.Distance));
+		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 4.f, 16, FColor::Blue, false, 4.f, ECC_WorldStatic, 1.f);
+
+	}
+
+	else
+	{
+		Log(ELogLevel::INFO, "We hit nothing");
+		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 5.f, ECC_WorldStatic, 1.f);
+	}
+}
+
+void ADestructible_demoCharacter::AttackInput(EAttackType AttackType)
+{
+	Log(ELogLevel::WARNING, __FUNCTION__);
+	CurrentAttacktype = AttackType;
+	//int MontageSectionIndex = rand() % 3 + 1;
+	//FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
+	//PlayAnimMontage(FistMeleeAttackMontage, 1.2f, FName(*MontageSection));
 
 	if (PlayerAttackDataTable) {
 		static const FString contextString(TEXT("Player attack montage context"));
-		AttackMontage = PlayerAttackDataTable->FindRow<FPlayerAttackMontage>(FName(TEXT("Punch1")), contextString, true);
+		FName AttackRowKey;
+
+		const FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, false);
+		switch (AttackType)
+		{
+		case EAttackType::MELEE_FIST:
+			AttackRowKey = FName(TEXT("Punch"));
+			LeftMeleeCollisionBox->AttachToComponent(GetMesh(), AttachmentRules, FName("Fist_L_Collision"));
+			RightMeleeCollisionBox->AttachToComponent(GetMesh(), AttachmentRules, FName("Fist_R_Collision"));
+			IsKeyboardEnabled = true;
+			IsAnimationBlended = true;
+			break;
+
+		case EAttackType::MELEE_KICK:
+			AttackRowKey = FName(TEXT("Kick"));
+			LeftMeleeCollisionBox->AttachToComponent(GetMesh(), AttachmentRules, FName("Foot_L_Collision"));
+			RightMeleeCollisionBox->AttachToComponent(GetMesh(), AttachmentRules, FName("Foot_R_Collision"));
+			IsKeyboardEnabled = false;
+			IsAnimationBlended = false;
+			break;
+
+		default:
+			//IsKeyboardEnabled = true;
+			IsAnimationBlended = true;
+			break;
+		}
+		AttackMontage = PlayerAttackDataTable->FindRow<FPlayerAttackMontage>(AttackRowKey, contextString, true);
 		if (AttackMontage) {
 			int MontageSectionIndex = rand() % (AttackMontage->AnimSectionCount) + 1;
 			FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
@@ -176,9 +275,22 @@ void ADestructible_demoCharacter::AttackInput()
 	}
 }
 
+void ADestructible_demoCharacter::PunchAttack()
+{
+	//Log(ELogLevel::INFO, __FUNCTION__);
+	AttackInput(EAttackType::MELEE_FIST);
+	
+}
+
+void ADestructible_demoCharacter::KickAttack()
+{
+	//Log(ELogLevel::INFO, __FUNCTION__);
+	AttackInput(EAttackType::MELEE_KICK);
+}
+
 void ADestructible_demoCharacter::OnAttackHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	Log(ELogLevel::WARNING, Hit.GetActor()->GetName());
+	Log(ELogLevel::WARNING, Hit.GetActor()->GetName()); //Debug Purpose
 	if (PunchAudioComponent && !PunchAudioComponent->IsPlaying())
 	{
 		if (!PunchAudioComponent->IsActive())
@@ -209,30 +321,30 @@ void ADestructible_demoCharacter::OnAttackHit(UPrimitiveComponent* HitComponent,
 
 void ADestructible_demoCharacter::AttackStart()
 {
-	Log(ELogLevel::INFO, __FUNCTION__);
-	LeftFistCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Enabled);
-	//LeftFistCollisionBox->SetCollisionProfileName("Weapon");
-	LeftFistCollisionBox->SetNotifyRigidBodyCollision(true);
-	//LeftFistCollisionBox->SetGenerateOverlapEvents(true);
+	//Log(ELogLevel::INFO, __FUNCTION__);
+	LeftMeleeCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Enabled);
+	//LeftMeleeCollisionBox->SetCollisionProfileName("Weapon");
+	LeftMeleeCollisionBox->SetNotifyRigidBodyCollision(true);
+	//LeftMeleeCollisionBox->SetGenerateOverlapEvents(true);
 
-	RightFistCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Enabled);
-	//RightFistCollisionBox->SetCollisionProfileName("Weapon");
-	RightFistCollisionBox->SetNotifyRigidBodyCollision(true);
-	//RightFistCollisionBox->SetGenerateOverlapEvents(true);
+	RightMeleeCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Enabled);
+	//RightMeleeCollisionBox->SetCollisionProfileName("Weapon");
+	RightMeleeCollisionBox->SetNotifyRigidBodyCollision(true);
+	//RightMeleeCollisionBox->SetGenerateOverlapEvents(true);
 
 }
 
 void ADestructible_demoCharacter::AttackEnd()
 {
-	Log(ELogLevel::INFO, __FUNCTION__);
-	LeftFistCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
-	//LeftFistCollisionBox->SetCollisionProfileName("NoCollision");
-	LeftFistCollisionBox->SetNotifyRigidBodyCollision(false);
-	//LeftFistCollisionBox->SetGenerateOverlapEvents(false);
-	RightFistCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
-	//RightFistCollisionBox->SetCollisionProfileName("NoCollision");
-	RightFistCollisionBox->SetNotifyRigidBodyCollision(false);
-	//RightFistCollisionBox->SetGenerateOverlapEvents(false);
+	//Log(ELogLevel::INFO, __FUNCTION__);
+	LeftMeleeCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
+	//LeftMeleeCollisionBox->SetCollisionProfileName("NoCollision");
+	LeftMeleeCollisionBox->SetNotifyRigidBodyCollision(false);
+	//LeftMeleeCollisionBox->SetGenerateOverlapEvents(false);
+	RightMeleeCollisionBox->SetCollisionProfileName(MeleeCollisionProfile.Disabled);
+	//RightMeleeCollisionBox->SetCollisionProfileName("NoCollision");
+	RightMeleeCollisionBox->SetNotifyRigidBodyCollision(false);
+	//RightMeleeCollisionBox->SetGenerateOverlapEvents(false);
 
 	//PlayAnimMontage(FistMeleeAttackMontage, 1.f, FName("End_1"));
 }
@@ -331,7 +443,7 @@ void ADestructible_demoCharacter::LookUpAtRate(float Rate)
 
 void ADestructible_demoCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if ((Controller != NULL) && (Value != 0.0f) && IsKeyboardEnabled)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -345,7 +457,7 @@ void ADestructible_demoCharacter::MoveForward(float Value)
 
 void ADestructible_demoCharacter::MoveRight(float Value)
 {
-	if ( (Controller != NULL) && (Value != 0.0f) )
+	if ( (Controller != NULL) && (Value != 0.0f) && IsKeyboardEnabled)
 	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();

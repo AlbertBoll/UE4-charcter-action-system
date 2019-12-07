@@ -21,7 +21,7 @@ struct FPlayerAttackMontage : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 AnimSectionCount;
 
-
+	/**Description of anim montage details**/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FString Description;
 
@@ -58,6 +58,15 @@ enum class ELogLevel :uint8
 };
 
 UENUM(BlueprintType)
+enum class ELineTraceType :uint8
+{
+	CAMERA_SINGLE  UMETA(DisplayName = "Camera - Single Trace"),
+	PLAYER_SINGLE  UMETA(DisplayName = "Player - Single Trace"),
+	CAMERA_SPREAD  UMETA(DisplayName = "Camera - Spread Trace"),
+	PLAYER_SPREAD  UMETA(DisplayName = "Player - Spread Trace")
+};
+
+UENUM(BlueprintType)
 enum class ELogOutput :uint8
 {
 	ALL				UMETA(DisplayName = "All levels"),
@@ -68,7 +77,7 @@ enum class ELogOutput :uint8
 UENUM(BlueprintType)
 enum class EAttackType : uint8 {
 	MELEE_FIST			UMETA(DisplayName = "Melee - Fist"),
-	//MELEE_KICK			UMETA(DisplayName = "Melee - Kick")
+	MELEE_KICK			UMETA(DisplayName = "Melee - Kick")
 };
 
 UCLASS(config=Game)
@@ -93,10 +102,10 @@ class ADestructible_demoCharacter : public ACharacter
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* LeftFistCollisionBox;
+	class UBoxComponent* LeftMeleeCollisionBox;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* RightFistCollisionBox;
+	class UBoxComponent* RightMeleeCollisionBox;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Audio, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* PunchSoundCue;
@@ -106,6 +115,8 @@ class ADestructible_demoCharacter : public ACharacter
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	float AnimationBlendAmount;
+
+
 
 public:
 	ADestructible_demoCharacter();
@@ -120,7 +131,31 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	void AttackInput();
+	void PunchAttack();
+	void KickAttack();
+
+	UFUNCTION(BlueprintCallable, Category=Animation)
+	FORCEINLINE bool GetIsAnimationBlended() { return IsAnimationBlended; }
+
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	void SetIsKeyboardEnabled(bool Enabled);
+
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	FORCEINLINE EAttackType GetCurrentAttackType() { return CurrentAttacktype; }
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	ELineTraceType LineTraceType;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	float LineTraceDistance;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	float LineTraceSpread;
+	
+
+	void FireLineTrace();
+
+	void AttackInput(EAttackType AttackType);
 
 	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -194,15 +229,23 @@ private:
 	* @param FString the message for display
 	*/
 	//friend class PunchThrowAnimNotify;
+
+	bool IsAnimationBlended;
 	FPlayerAttackMontage* AttackMontage;
+	//FPlayerAttackMontage* KickAttackMontage;
+
 	UAudioComponent* PunchAudioComponent;
 	UAudioComponent* PunchThrowAudioComponent;
+
+	EAttackType CurrentAttacktype;
 	friend class UPunchThrowAnimNotify;
 	friend class UPunchThrowAnimNotifyState;
 
 
 	void Log(ELogLevel LogLevel, FString Message);
 	FMeleeCollisionProfile MeleeCollisionProfile;
+
+	bool IsKeyboardEnabled;
 	
 	/**
 	* Log - prints a message to all the log outputs with a specific color
