@@ -67,6 +67,14 @@ enum class ELineTraceType :uint8
 };
 
 UENUM(BlueprintType)
+enum class EAttackStrength :uint8
+{
+	Light   UMETA(DisplayName = "Light Attack"),
+	Medium  UMETA(DisplayName = "Medium Attack"),
+	Heavy   UMETA(DisplayName = "Heavy Attack")
+};
+
+UENUM(BlueprintType)
 enum class ELogOutput :uint8
 {
 	ALL				UMETA(DisplayName = "All levels"),
@@ -134,6 +142,12 @@ public:
 	void PunchAttack();
 	void KickAttack();
 
+	void LightAttackStart();
+	void LightAttackEnd();
+
+	void HeavyAttackStart();
+	void HeavyAttackEnd();
+
 	UFUNCTION(BlueprintCallable, Category=Animation)
 	FORCEINLINE bool GetIsAnimationBlended() { return IsAnimationBlended; }
 
@@ -156,6 +170,8 @@ public:
 	void FireLineTrace();
 
 	void AttackInput(EAttackType AttackType);
+
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -230,29 +246,40 @@ private:
 	*/
 	//friend class PunchThrowAnimNotify;
 
-	bool IsAnimationBlended;
+	
 	FPlayerAttackMontage* AttackMontage;
 	//FPlayerAttackMontage* KickAttackMontage;
 
 	UAudioComponent* PunchAudioComponent;
 	UAudioComponent* PunchThrowAudioComponent;
 
+	//boolian type
+	bool IsLightAttack;
+	bool IsHeavyAttack;
+	bool IsAnimationBlended;
+	bool IsKeyboardEnabled;
+	
+	//Enum type
 	EAttackType CurrentAttacktype;
+	EAttackStrength CurrentAttackStrength;
+
+	//struct type
+	FMeleeCollisionProfile MeleeCollisionProfile;
+
+	//friend class
 	friend class UPunchThrowAnimNotify;
 	friend class UPunchThrowAnimNotifyState;
 
 
 	void Log(ELogLevel LogLevel, FString Message);
-	FMeleeCollisionProfile MeleeCollisionProfile;
 
-	bool IsKeyboardEnabled;
-	
 	/**
 	* Log - prints a message to all the log outputs with a specific color
 	* @param LogLevel {@see ELogLevel} affects color of log
 	* @param FString the message for display
 	* @param ELogOutput - All, Output Log or Screen
 	*/
+
 	void Log(ELogLevel LogLevel, FString Message, ELogOutput LogOutput);
 };
 

@@ -25,17 +25,32 @@ ADestructibleProp::ADestructibleProp()
 
 void ADestructibleProp::Damage(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, __FUNCTION__);
+	
+	if (!IsDestroyed && OtherComp->ComponentHasTag("Weapon")) {
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange,OtherComp->GetName());
+		if (CurrentHealth - 1.f > 0) {
+			CurrentHealth -= 1.f;
+		}
+		else
+			Destroy(DefaultDamage, Hit.Location, NormalImpulse, DefaultImpluse);
+	}
 }
 
 void ADestructibleProp::Trigger(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, __FUNCTION__);
+	if (IsTriggerEnabled && !IsDestroyed && OtherActor->ActorHasTag("Player")) {
+		Destroy(DefaultDamage, DestructibleComponent->GetComponentLocation(), DestructibleComponent->GetForwardVector(), DefaultImpluse);
+	}
 }
 
-void ADestructibleProp::Destroy(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ADestructibleProp::Destroy(float damage, FVector HitLocation, FVector ImpulseDirection, float Impulse)
 {
-
+	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, __FUNCTION__);
+	if (!IsDestroyed) {
+		IsDestroyed = true;
+		DestructibleComponent->ApplyDamage(damage, HitLocation, ImpulseDirection, Impulse);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -45,7 +60,7 @@ void ADestructibleProp::BeginPlay()
 	DestructibleComponent->OnComponentHit.AddDynamic(this, &ADestructibleProp::Damage);
 	
 	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &ADestructibleProp::Trigger);
-	TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &ADestructibleProp::Destroy);
+	//TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &ADestructibleProp::Destroy);
 
 	
 }

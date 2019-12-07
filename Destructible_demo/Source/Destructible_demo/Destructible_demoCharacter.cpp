@@ -166,6 +166,12 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &ADestructible_demoCharacter::AttackEnd);
 	PlayerInputComponent->BindAction("Kick", IE_Pressed, this, &ADestructible_demoCharacter::KickAttack);
 	PlayerInputComponent->BindAction("FireLineTrace", IE_Pressed, this, &ADestructible_demoCharacter::FireLineTrace);
+	PlayerInputComponent->BindAction("LightAttackModifier", IE_Pressed, this, &ADestructible_demoCharacter::LightAttackStart);
+	PlayerInputComponent->BindAction("LightAttackModifier", IE_Released, this, &ADestructible_demoCharacter::LightAttackEnd);
+
+	PlayerInputComponent->BindAction("HeavyAttackModifier", IE_Pressed, this, &ADestructible_demoCharacter::HeavyAttackStart);
+	PlayerInputComponent->BindAction("HeavyAttackModifier", IE_Released, this, &ADestructible_demoCharacter::HeavyAttackEnd);
+
 }
 
 void ADestructible_demoCharacter::SetIsKeyboardEnabled(bool Enabled)
@@ -175,7 +181,7 @@ void ADestructible_demoCharacter::SetIsKeyboardEnabled(bool Enabled)
 
 void ADestructible_demoCharacter::FireLineTrace()
 {
-	Log(ELogLevel::INFO, __FUNCTION__);
+	//Log(ELogLevel::INFO, __FUNCTION__);
 
 	FVector Start, End;
 
@@ -232,11 +238,17 @@ void ADestructible_demoCharacter::FireLineTrace()
 
 void ADestructible_demoCharacter::AttackInput(EAttackType AttackType)
 {
-	Log(ELogLevel::WARNING, __FUNCTION__);
+	//Log(ELogLevel::WARNING, __FUNCTION__);
 	CurrentAttacktype = AttackType;
 	//int MontageSectionIndex = rand() % 3 + 1;
 	//FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
 	//PlayAnimMontage(FistMeleeAttackMontage, 1.2f, FName(*MontageSection));
+
+	CurrentAttackStrength = EAttackStrength::Medium;
+	if (IsHeavyAttack)
+		CurrentAttackStrength = EAttackStrength::Heavy;
+	else if (IsLightAttack&&!IsHeavyAttack)
+		CurrentAttackStrength = EAttackStrength::Light;
 
 	if (PlayerAttackDataTable) {
 		static const FString contextString(TEXT("Player attack montage context"));
@@ -268,11 +280,40 @@ void ADestructible_demoCharacter::AttackInput(EAttackType AttackType)
 		}
 		AttackMontage = PlayerAttackDataTable->FindRow<FPlayerAttackMontage>(AttackRowKey, contextString, true);
 		if (AttackMontage) {
-			int MontageSectionIndex = rand() % (AttackMontage->AnimSectionCount) + 1;
+			//Pick the corrected attack type based on the attack strength
+			//int MontageSectionIndex = rand() % (AttackMontage->AnimSectionCount) + 1; // change code
+			int MontageSectionIndex;
+
+			switch (CurrentAttackStrength)
+			{
+			case EAttackStrength::Light:
+				MontageSectionIndex = 1;
+				break;
+
+			case EAttackStrength::Medium:
+				MontageSectionIndex = 2;
+				break;
+
+			case EAttackStrength::Heavy:
+				MontageSectionIndex = 3;
+				break;
+
+			default:
+				MontageSectionIndex = 2;
+				break;
+			
+			}
+
 			FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
-			PlayAnimMontage(AttackMontage->MeleeFistAttackMontage, 1.2f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage->MeleeFistAttackMontage, 1.1f, FName(*MontageSection));
 		}
 	}
+}
+
+void ADestructible_demoCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	//FireLineTrace();
 }
 
 void ADestructible_demoCharacter::PunchAttack()
@@ -288,9 +329,31 @@ void ADestructible_demoCharacter::KickAttack()
 	AttackInput(EAttackType::MELEE_KICK);
 }
 
+void ADestructible_demoCharacter::LightAttackStart()
+{
+	IsLightAttack = true;
+
+
+}
+
+void ADestructible_demoCharacter::LightAttackEnd()
+{
+	IsLightAttack = false;
+}
+
+void ADestructible_demoCharacter::HeavyAttackStart()
+{
+	IsHeavyAttack = true;
+}
+
+void ADestructible_demoCharacter::HeavyAttackEnd()
+{
+	IsHeavyAttack = false;
+}
+
 void ADestructible_demoCharacter::OnAttackHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	Log(ELogLevel::WARNING, Hit.GetActor()->GetName()); //Debug Purpose
+	//Log(ELogLevel::WARNING, Hit.GetActor()->GetName()); //Debug Purpose
 	if (PunchAudioComponent && !PunchAudioComponent->IsPlaying())
 	{
 		if (!PunchAudioComponent->IsActive())
