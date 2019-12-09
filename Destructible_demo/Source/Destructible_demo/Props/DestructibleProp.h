@@ -23,6 +23,12 @@ public:
 	void Trigger(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	
 	UFUNCTION()
+	void TriggerDestroy();
+
+	UFUNCTION()
+	void TriggerCountdownDestory();
+
+	UFUNCTION()
 	void Destroy(float damage, FVector HitLocation, FVector ImpulseDirection, float Impulse);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Destructible")
@@ -49,6 +55,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Destructible")
 	float DefaultImpluse;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Destructible")
+	int32 TriggerCountdown;
+
+	FTimerHandle TriggerDestroyTimerHandle;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -56,5 +67,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+
+	
 
 };

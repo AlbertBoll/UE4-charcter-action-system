@@ -166,6 +166,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
 	float LineTraceSpread;
 	
+	UFUNCTION()
+	void ResetCombo();
 
 	void FireLineTrace();
 
@@ -258,7 +260,10 @@ private:
 	bool IsHeavyAttack;
 	bool IsAnimationBlended;
 	bool IsKeyboardEnabled;
-	
+
+	int32 CurrentComboCount;
+	FTimerHandle ComboResetHandle;
+
 	//Enum type
 	EAttackType CurrentAttacktype;
 	EAttackStrength CurrentAttackStrength;

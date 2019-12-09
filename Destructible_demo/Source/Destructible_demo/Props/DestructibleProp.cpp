@@ -21,6 +21,7 @@ ADestructibleProp::ADestructibleProp()
 	DefaultDamage = 1.f;
 	DefaultImpluse = 1.f;
 	CurrentHealth = MAXHealth;
+	TriggerCountdown = 10;
 }
 
 void ADestructibleProp::Damage(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -38,10 +39,43 @@ void ADestructibleProp::Damage(UPrimitiveComponent* HitComponent, AActor* OtherA
 
 void ADestructibleProp::Trigger(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, __FUNCTION__);
+	
 	if (IsTriggerEnabled && !IsDestroyed && OtherActor->ActorHasTag("Player")) {
-		Destroy(DefaultDamage, DestructibleComponent->GetComponentLocation(), DestructibleComponent->GetForwardVector(), DefaultImpluse);
+		
+		//Destroy(DefaultDamage, DestructibleComponent->GetComponentLocation(), OtherActor->GetActorForwardVector(), DefaultImpluse);
+		if (GetWorld()->GetTimerManager().IsTimerActive(TriggerDestroyTimerHandle))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, "Pausing Timer");
+			GetWorld()->GetTimerManager().ClearTimer(TriggerDestroyTimerHandle);
+		}
+
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, "Starting Timer");
+			GetWorld()->GetTimerManager().SetTimer(TriggerDestroyTimerHandle, this, &ADestructibleProp::TriggerCountdownDestory, 1.f, true);
+		}
 	}
+}
+
+void ADestructibleProp::TriggerDestroy()
+{
+	if((!IsDestroyed) && IsTriggerEnabled)
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, "about to explosion");
+		Destroy(DefaultDamage, DestructibleComponent->GetComponentLocation(), DestructibleComponent->GetUpVector(), DefaultImpluse);
+		
+}
+
+void ADestructibleProp::TriggerCountdownDestory()
+{
+	if (--TriggerCountdown <= 0) {
+		int32 RandomDelay = FMath::RandRange(1, 4);
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, "Trigger explosion after "+FString::FromInt(RandomDelay)+" seconds");
+		GetWorld()->GetTimerManager().SetTimer(TriggerDestroyTimerHandle, this, &ADestructibleProp::TriggerDestroy, RandomDelay);
+		//TriggerDestroy();
+	}
+
+	else
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, "Counting down " + FString::FromInt(TriggerCountdown));
 }
 
 void ADestructibleProp::Destroy(float damage, FVector HitLocation, FVector ImpulseDirection, float Impulse)

@@ -8,3 +8,4 @@ By using Unreal engine 4, building character action system, including character'
 * 05 Slightly refine the physical feedback when the character collide with other objects.
 * 06 LineTracing from Character and camera perspective view to trigger the object detection
 * 07 Implementing player triggering events of explosion, particle system, mesh destruction. 
+* 08 Setup simple HUD to show show the character's combo.

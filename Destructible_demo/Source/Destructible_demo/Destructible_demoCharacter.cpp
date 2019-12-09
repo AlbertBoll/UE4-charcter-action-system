@@ -11,6 +11,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Sound/SoundCue.h"
 #include "Engine.h"
+#include "GameHUD.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ADestructible_demoCharacter
@@ -100,6 +101,7 @@ ADestructible_demoCharacter::ADestructible_demoCharacter()
 	LineTraceType = ELineTraceType::CAMERA_SINGLE;
 	LineTraceDistance = 100.f;
 	LineTraceSpread = 10.f;
+	CurrentComboCount = 0;
 }
 
 void ADestructible_demoCharacter::BeginPlay()
@@ -177,6 +179,15 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 void ADestructible_demoCharacter::SetIsKeyboardEnabled(bool Enabled)
 {
 	IsKeyboardEnabled = Enabled;
+}
+
+void ADestructible_demoCharacter::ResetCombo()
+{
+	CurrentComboCount = 0;
+	AGameHUD* GameHUD = Cast<AGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+	if (GameHUD) {
+		GameHUD->ResetCombo();
+	}
 }
 
 void ADestructible_demoCharacter::FireLineTrace()
@@ -305,7 +316,7 @@ void ADestructible_demoCharacter::AttackInput(EAttackType AttackType)
 			}
 
 			FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
-			PlayAnimMontage(AttackMontage->MeleeFistAttackMontage, 1.1f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage->MeleeFistAttackMontage, 1.0f, FName(*MontageSection));
 		}
 	}
 }
@@ -369,6 +380,18 @@ void ADestructible_demoCharacter::OnAttackHit(UPrimitiveComponent* HitComponent,
 		//AnimInstance->Montage_Pause(AttackMontage->MeleeFistAttackMontage);
 		AnimInstance->Montage_Play(AttackMontage->MeleeFistAttackMontage, AnimationBlendAmount, EMontagePlayReturnType::Duration, AnimInstance->Montage_GetPosition(AttackMontage->MeleeFistAttackMontage), true);
 	}
+	AGameHUD* GameHUD = Cast<AGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+	if (GameHUD) {
+		CurrentComboCount += 1;
+		GameHUD->UpdateComboCount(CurrentComboCount);
+	}
+	if (!GetWorld()->GetTimerManager().IsTimerActive(ComboResetHandle)) {
+		GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this, &ADestructible_demoCharacter::ResetCombo, 4.f, false);
+	}
+
+	else
+		GetWorld()->GetTimerManager().ClearTimer(ComboResetHandle);
+		GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this, &ADestructible_demoCharacter::ResetCombo, 4.f, false);
 
 }
 
