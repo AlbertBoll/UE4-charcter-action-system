@@ -154,6 +154,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Animation)
 	void SetIsKeyboardEnabled(bool Enabled);
 
+
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	bool IsArmed();
+
 	UFUNCTION(BlueprintCallable, Category = Animation)
 	FORCEINLINE EAttackType GetCurrentAttackType() { return CurrentAttacktype; }
 
@@ -165,9 +169,24 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
 	float LineTraceSpread;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	int32 MaxCountdownToIdle;
 	
 	UFUNCTION()
 	void ResetCombo();
+
+	UFUNCTION()
+	void CrouchStart();
+
+	UFUNCTION()
+	void CrouchEnd();
+
+	UFUNCTION()
+	void ArmPlayer();
+
+	UFUNCTION()
+	void TriggerCountdownToIdle();
 
 	void FireLineTrace();
 
@@ -260,9 +279,16 @@ private:
 	bool IsHeavyAttack;
 	bool IsAnimationBlended;
 	bool IsKeyboardEnabled;
+	bool bIsArmed;
 
+
+	//int type
 	int32 CurrentComboCount;
+	int32 CountdownToIdle;
+
+	//FTimerHandle type
 	FTimerHandle ComboResetHandle;
+	FTimerHandle ArmedToIdleTimerHandle;
 
 	//Enum type
 	EAttackType CurrentAttacktype;

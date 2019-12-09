@@ -174,11 +174,20 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 	PlayerInputComponent->BindAction("HeavyAttackModifier", IE_Pressed, this, &ADestructible_demoCharacter::HeavyAttackStart);
 	PlayerInputComponent->BindAction("HeavyAttackModifier", IE_Released, this, &ADestructible_demoCharacter::HeavyAttackEnd);
 
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ADestructible_demoCharacter::CrouchStart);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ADestructible_demoCharacter::CrouchEnd);
+	PlayerInputComponent->BindAction("ArmPlayer", IE_Pressed, this, &ADestructible_demoCharacter::ArmPlayer);
+
 }
 
 void ADestructible_demoCharacter::SetIsKeyboardEnabled(bool Enabled)
 {
 	IsKeyboardEnabled = Enabled;
+}
+
+bool ADestructible_demoCharacter::IsArmed()
+{
+	return bIsArmed;
 }
 
 void ADestructible_demoCharacter::ResetCombo()
@@ -187,6 +196,34 @@ void ADestructible_demoCharacter::ResetCombo()
 	AGameHUD* GameHUD = Cast<AGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
 	if (GameHUD) {
 		GameHUD->ResetCombo();
+	}
+}
+
+void ADestructible_demoCharacter::CrouchStart()
+{
+	Crouch();
+}
+
+void ADestructible_demoCharacter::CrouchEnd()
+{
+	UnCrouch();
+}
+
+void ADestructible_demoCharacter::ArmPlayer()
+{
+	bIsArmed = !bIsArmed;
+	if (!bIsArmed) {
+		CountdownToIdle = MaxCountdownToIdle;
+		GetWorld()->GetTimerManager().ClearTimer(ArmedToIdleTimerHandle);
+	}
+}
+
+void ADestructible_demoCharacter::TriggerCountdownToIdle()
+{
+	if (--CountdownToIdle <= 0) {
+		bIsArmed = false;
+		CountdownToIdle = MaxCountdownToIdle;
+		GetWorld()->GetTimerManager().ClearTimer(ArmedToIdleTimerHandle);
 	}
 }
 
@@ -317,6 +354,9 @@ void ADestructible_demoCharacter::AttackInput(EAttackType AttackType)
 
 			FString MontageSection = "Start_" + FString::FromInt(MontageSectionIndex);
 			PlayAnimMontage(AttackMontage->MeleeFistAttackMontage, 1.0f, FName(*MontageSection));
+			if (!bIsArmed) {
+				bIsArmed = true;
+			}
 		}
 	}
 }
@@ -433,6 +473,16 @@ void ADestructible_demoCharacter::AttackEnd()
 	//RightMeleeCollisionBox->SetGenerateOverlapEvents(false);
 
 	//PlayAnimMontage(FistMeleeAttackMontage, 1.f, FName("End_1"));
+	bool IsArmedActive = GetWorld()->GetTimerManager().IsTimerActive(ArmedToIdleTimerHandle);
+	if (IsArmedActive) {
+
+		//reset timer
+		GetWorld()->GetTimerManager().ClearTimer(ArmedToIdleTimerHandle);
+	}
+	
+	CountdownToIdle = MaxCountdownToIdle;
+	GetWorld()->GetTimerManager().SetTimer(ArmedToIdleTimerHandle, this, &ADestructible_demoCharacter::TriggerCountdownToIdle, 1.f, true); 
+
 }
 
 void ADestructible_demoCharacter::Log(ELogLevel LogLevel, FString Message)
