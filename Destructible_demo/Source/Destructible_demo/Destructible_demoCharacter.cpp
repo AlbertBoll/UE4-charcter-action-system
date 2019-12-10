@@ -31,7 +31,7 @@ ADestructible_demoCharacter::ADestructible_demoCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	//GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
@@ -102,6 +102,15 @@ ADestructible_demoCharacter::ADestructible_demoCharacter()
 	LineTraceDistance = 100.f;
 	LineTraceSpread = 10.f;
 	CurrentComboCount = 0;
+	IsAnimationBlended = true;
+	CurrentAttackStrength = EAttackStrength::Medium;
+	MaxCrouchSpeed = 200.f;
+	MaxWalkSpeed = 250.f;
+	MaxRunSpeed = 600.f;
+	MaxArmedSpeed = 200.f;
+	GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = MaxCrouchSpeed;
+	
 }
 
 void ADestructible_demoCharacter::BeginPlay()
@@ -146,6 +155,10 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ADestructible_demoCharacter::RunStart);
+	PlayerInputComponent->BindAction("Run", IE_Released, this, &ADestructible_demoCharacter::RunEnd);
+
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &ADestructible_demoCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ADestructible_demoCharacter::MoveRight);
 
@@ -164,6 +177,7 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ADestructible_demoCharacter::OnResetVR);
 
+	//Attack functionality
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &ADestructible_demoCharacter::PunchAttack);
 	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &ADestructible_demoCharacter::AttackEnd);
 	PlayerInputComponent->BindAction("Kick", IE_Pressed, this, &ADestructible_demoCharacter::KickAttack);
@@ -176,7 +190,8 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ADestructible_demoCharacter::CrouchStart);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ADestructible_demoCharacter::CrouchEnd);
-	PlayerInputComponent->BindAction("ArmPlayer", IE_Pressed, this, &ADestructible_demoCharacter::ArmPlayer);
+	PlayerInputComponent->BindAction("ArmPlayer", IE_Pressed, this, &ADestructible_demoCharacter::ArmPlayerImmediately);
+	//PlayerInputComponent->BindAction("ArmPlayer", IE_Pressed, this, &ADestructible_demoCharacter::ArmPlayer);
 
 }
 
@@ -190,6 +205,21 @@ bool ADestructible_demoCharacter::IsArmed()
 	return bIsArmed;
 }
 
+bool ADestructible_demoCharacter::IsRunning()
+{
+	return bIsRunning;
+}
+
+float ADestructible_demoCharacter::GetMoveRight()
+{
+	return MoveRightValue;
+}
+
+float ADestructible_demoCharacter::GetMoveForward()
+{
+	return MoveForwardValue;
+}
+
 void ADestructible_demoCharacter::ResetCombo()
 {
 	CurrentComboCount = 0;
@@ -201,20 +231,77 @@ void ADestructible_demoCharacter::ResetCombo()
 
 void ADestructible_demoCharacter::CrouchStart()
 {
+	if (bIsArmed) {
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->MaxWalkSpeedCrouched = MaxArmedSpeed;
+	}
+
+	else {
+		GetCharacterMovement()->MaxWalkSpeedCrouched = MaxCrouchSpeed;
+	}
 	Crouch();
 }
 
 void ADestructible_demoCharacter::CrouchEnd()
 {
+	if (bIsArmed) {
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->MaxWalkSpeed = MaxArmedSpeed;
+	}
+	else 
+	{
+		if (bIsRunning) {
+			GetCharacterMovement()->MaxWalkSpeed = MaxRunSpeed;
+		}
+		else
+			GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+	}
+
+	
 	UnCrouch();
 }
 
-void ADestructible_demoCharacter::ArmPlayer()
+void ADestructible_demoCharacter::ArmPlayer(bool toggle)
 {
-	bIsArmed = !bIsArmed;
+	//bIsArmed = !bIsArmed;
+	bIsArmed = toggle;
 	if (!bIsArmed) {
 		CountdownToIdle = MaxCountdownToIdle;
 		GetWorld()->GetTimerManager().ClearTimer(ArmedToIdleTimerHandle);
+		if (bIsRunning) {
+			GetCharacterMovement()->MaxWalkSpeed = MaxRunSpeed;
+		}
+		else {
+			GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+		}
+	}
+	else {
+		GetCharacterMovement()->MaxWalkSpeed = MaxArmedSpeed;
+
+	}
+
+}
+
+void ADestructible_demoCharacter::ArmPlayerImmediately()
+{
+	ArmPlayer(!bIsArmed);
+}
+
+void ADestructible_demoCharacter::RunStart()
+{
+	if (!bIsArmed && !bIsCrouched) {
+		bIsRunning = true;
+		GetCharacterMovement()->MaxWalkSpeed = MaxRunSpeed;
+	}
+}
+
+void ADestructible_demoCharacter::RunEnd()
+{
+	if (!bIsArmed && !bIsCrouched) {
+		bIsRunning = false;
+		GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
 	}
 }
 
@@ -457,6 +544,7 @@ void ADestructible_demoCharacter::AttackStart()
 	//RightMeleeCollisionBox->SetCollisionProfileName("Weapon");
 	RightMeleeCollisionBox->SetNotifyRigidBodyCollision(true);
 	//RightMeleeCollisionBox->SetGenerateOverlapEvents(true);
+	ArmPlayer(true);
 
 }
 
@@ -472,16 +560,16 @@ void ADestructible_demoCharacter::AttackEnd()
 	RightMeleeCollisionBox->SetNotifyRigidBodyCollision(false);
 	//RightMeleeCollisionBox->SetGenerateOverlapEvents(false);
 
-	//PlayAnimMontage(FistMeleeAttackMontage, 1.f, FName("End_1"));
-	bool IsArmedActive = GetWorld()->GetTimerManager().IsTimerActive(ArmedToIdleTimerHandle);
-	if (IsArmedActive) {
+	////PlayAnimMontage(FistMeleeAttackMontage, 1.f, FName("End_1"));
+	//bool IsArmedActive = GetWorld()->GetTimerManager().IsTimerActive(ArmedToIdleTimerHandle);
+	//if (IsArmedActive) {
 
-		//reset timer
-		GetWorld()->GetTimerManager().ClearTimer(ArmedToIdleTimerHandle);
-	}
-	
-	CountdownToIdle = MaxCountdownToIdle;
-	GetWorld()->GetTimerManager().SetTimer(ArmedToIdleTimerHandle, this, &ADestructible_demoCharacter::TriggerCountdownToIdle, 1.f, true); 
+	//	//reset timer
+	//	GetWorld()->GetTimerManager().ClearTimer(ArmedToIdleTimerHandle);
+	//}
+	//
+	//CountdownToIdle = MaxCountdownToIdle;
+	//GetWorld()->GetTimerManager().SetTimer(ArmedToIdleTimerHandle, this, &ADestructible_demoCharacter::TriggerCountdownToIdle, 1.f, true); 
 
 }
 
@@ -579,29 +667,75 @@ void ADestructible_demoCharacter::LookUpAtRate(float Rate)
 
 void ADestructible_demoCharacter::MoveForward(float Value)
 {
+
+	MoveForwardValue = Value;
 	if ((Controller != NULL) && (Value != 0.0f) && IsKeyboardEnabled)
 	{
 		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		//const FRotator Rotation = Controller->GetControlRotation();
+		//const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+		//// get forward vector
+		//const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		//AddMovementInput(Direction, Value);
+		if (bIsArmed && !bIsCrouched) {
+			if (!GetCharacterMovement()->bUseControllerDesiredRotation) {
+				GetCharacterMovement()->bUseControllerDesiredRotation = true;
+				GetCharacterMovement()->bOrientRotationToMovement = false;
+			}
+			AddMovementInput(GetActorForwardVector(), MoveForwardValue);
+		}
+		else {
+			if (GetCharacterMovement()->bUseControllerDesiredRotation) {
+				GetCharacterMovement()->bUseControllerDesiredRotation = false;
+				GetCharacterMovement()->bOrientRotationToMovement = true;
+			}
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			//get forward vector
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			AddMovementInput(Direction, Value);
+		
+		}
 	}
 }
 
 void ADestructible_demoCharacter::MoveRight(float Value)
 {
+
+	MoveRightValue = Value;
 	if ( (Controller != NULL) && (Value != 0.0f) && IsKeyboardEnabled)
 	{
 		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		//const FRotator Rotation = Controller->GetControlRotation();
+		//const FRotator YawRotation(0, Rotation.Yaw, 0);
 	
-		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Direction, Value);
+		//// get right vector 
+		//const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		//// add movement in that direction
+		//AddMovementInput(Direction, Value);
+		if (bIsArmed && !bIsCrouched) {
+			if (!GetCharacterMovement()->bUseControllerDesiredRotation) {
+				GetCharacterMovement()->bUseControllerDesiredRotation = true;
+				GetCharacterMovement()->bOrientRotationToMovement = false;
+			}
+			AddMovementInput(GetActorRightVector(), MoveRightValue);
+		}
+		else {
+			if (GetCharacterMovement()->bUseControllerDesiredRotation) {
+				GetCharacterMovement()->bUseControllerDesiredRotation = false;
+				GetCharacterMovement()->bOrientRotationToMovement = true;
+			}
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			//get right vector 
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		    //add movement in that direction
+			AddMovementInput(Direction, Value);
+
+		}
+
 	}
 }

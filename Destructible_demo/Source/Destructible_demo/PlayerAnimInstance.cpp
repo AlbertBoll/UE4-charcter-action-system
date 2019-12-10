@@ -36,6 +36,9 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			bIsCrouching = Player->GetMovementComponent()->IsCrouching();
 			bIsArmed = Player->IsArmed();
 			bIsMoving = Player->GetVelocity().Size() > 0;
+			bIsRunning = Player->IsRunning();
+			MoveRight = Player->GetMoveRight();
+			MoveForward = Player->GetMoveForward();
 
 			/**Debug Purpose**/
 			/*GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, "IsInAir " + FString(IsInAir ? "true" : "false"));

@@ -32,6 +32,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	bool bIsMoving;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	bool bIsRunning;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float MoveRight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float MoveForward;
+
 public:
 	UPlayerAnimInstance();
 	virtual void NativeInitializeAnimation()override;

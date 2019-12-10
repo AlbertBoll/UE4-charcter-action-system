@@ -159,6 +159,17 @@ public:
 	bool IsArmed();
 
 	UFUNCTION(BlueprintCallable, Category = Animation)
+	bool IsRunning();
+
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	float GetMoveRight();
+
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	float GetMoveForward();
+
+
+
+	UFUNCTION(BlueprintCallable, Category = Animation)
 	FORCEINLINE EAttackType GetCurrentAttackType() { return CurrentAttacktype; }
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
@@ -172,6 +183,21 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
 	int32 MaxCountdownToIdle;
+
+	/**Fine control the character movement**/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	float MaxCrouchSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	float MaxWalkSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	float MaxRunSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = LineTrace)
+	float MaxArmedSpeed;
+
+
 	
 	UFUNCTION()
 	void ResetCombo();
@@ -183,7 +209,18 @@ public:
 	void CrouchEnd();
 
 	UFUNCTION()
-	void ArmPlayer();
+	void ArmPlayer(bool toggle);
+
+	UFUNCTION()
+	void ArmPlayerImmediately();
+
+	UFUNCTION()
+	void RunStart();
+
+	UFUNCTION()
+	void RunEnd();
+
+
 
 	UFUNCTION()
 	void TriggerCountdownToIdle();
@@ -280,11 +317,16 @@ private:
 	bool IsAnimationBlended;
 	bool IsKeyboardEnabled;
 	bool bIsArmed;
+	bool bIsRunning;
 
 
 	//int type
 	int32 CurrentComboCount;
 	int32 CountdownToIdle;
+
+	//float type
+	float MoveForwardValue;
+	float MoveRightValue;
 
 	//FTimerHandle type
 	FTimerHandle ComboResetHandle;
