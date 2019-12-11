@@ -87,13 +87,19 @@ void ADestructibleProp::Destroy(float damage, FVector HitLocation, FVector Impul
 	}
 }
 
+
+void ADestructibleProp::Interact_Implementation()
+{
+	TriggerDestroy();
+}
+
 // Called when the game starts or when spawned
 void ADestructibleProp::BeginPlay()
 {
 	Super::BeginPlay();
-	DestructibleComponent->OnComponentHit.AddDynamic(this, &ADestructibleProp::Damage);
+	//DestructibleComponent->OnComponentHit.AddDynamic(this, &ADestructibleProp::Damage);
 	
-	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &ADestructibleProp::Trigger);
+	//TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &ADestructibleProp::Trigger);
 	//TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &ADestructibleProp::Destroy);
 
 	

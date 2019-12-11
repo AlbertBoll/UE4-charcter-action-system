@@ -12,6 +12,7 @@
 #include "Sound/SoundCue.h"
 #include "Engine.h"
 #include "GameHUD.h"
+#include "Props/InteractiveProp.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ADestructible_demoCharacter
@@ -181,7 +182,8 @@ void ADestructible_demoCharacter::SetupPlayerInputComponent(class UInputComponen
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &ADestructible_demoCharacter::PunchAttack);
 	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &ADestructible_demoCharacter::AttackEnd);
 	PlayerInputComponent->BindAction("Kick", IE_Pressed, this, &ADestructible_demoCharacter::KickAttack);
-	PlayerInputComponent->BindAction("FireLineTrace", IE_Pressed, this, &ADestructible_demoCharacter::FireLineTrace);
+	//PlayerInputComponent->BindAction("FireLineTrace", IE_Pressed, this, &ADestructible_demoCharacter::FireLineTrace);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ADestructible_demoCharacter::Interact);
 	PlayerInputComponent->BindAction("LightAttackModifier", IE_Pressed, this, &ADestructible_demoCharacter::LightAttackStart);
 	PlayerInputComponent->BindAction("LightAttackModifier", IE_Released, this, &ADestructible_demoCharacter::LightAttackEnd);
 
@@ -304,6 +306,89 @@ void ADestructible_demoCharacter::RunEnd()
 		GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
 	}
 }
+
+void ADestructible_demoCharacter::Interact()
+{
+	FVector Start, End;
+	FVector PlayerEyes_Loc;
+	FRotator PlayerEyes_Rot;
+	GetActorEyesViewPoint(PlayerEyes_Loc, PlayerEyes_Rot);
+	Start = PlayerEyes_Loc;
+	End = Start + PlayerEyes_Rot.Vector() * LineTraceDistance;
+	FCollisionQueryParams TraceParams(FName(TEXT("InteractiveTrace")), true, this);
+	FHitResult HitResult = FHitResult(ForceInit);
+	bool bLineHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_GameTraceChannel3, TraceParams);
+	if (bLineHit && HitResult.GetActor()!=this) {
+		Log(ELogLevel::WARNING, HitResult.Actor->GetName());
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 5.f, ECC_WorldStatic, 2.f);
+		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 4, 16, FColor::Blue, false, 5.f, ECC_WorldStatic, 1.f);
+
+		//detect if the hit object is the interactive object
+		//1 implement interface
+		if (HitResult.GetActor()->GetClass()->ImplementsInterface(UInteractiveActor::StaticClass())) {
+			IInteractiveActor::Execute_Interact(HitResult.GetActor());
+		}
+		else if (HitResult.GetActor()->IsA(ADestructible_demoCharacter::StaticClass())) {
+			//Reset the material when unpossessed
+			if (bCurrentlyPossessed) {
+				bCurrentlyPossessed = false;
+				if (DefaultMaterialBody) {
+					GetMesh()->SetMaterial(0, DefaultMaterialBody);
+				}
+				if (DefaultMaterialChest) {
+					GetMesh()->SetMaterial(1, DefaultMaterialChest);
+				}
+
+			}
+			ADestructible_demoCharacter* PossessedPlayer = Cast<ADestructible_demoCharacter>(HitResult.GetActor());
+			if (PossessedPlayer && !PossessedPlayer->bCurrentlyPossessed) {
+				if (!SavedController) {
+					SavedController = GetController();
+				}
+				
+				//Unpossessed controller
+				SavedController->UnPossess();
+
+				//disabled the state management of character
+				IsKeyboardEnabled = false;
+				bIsRunning = false;
+				bIsArmed = false;
+
+				//disabled character's movement
+				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+				//posessed new character
+				SavedController->Possess(PossessedPlayer);
+
+				//enable movement
+				PossessedPlayer->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					
+				//set material
+				if (PossessedPlayer->PossessedMaterialBody) {
+					PossessedPlayer->GetMesh()->SetMaterial(0, PossessedPlayer->PossessedMaterialBody);
+				}
+
+				if (PossessedPlayer->PossessedMaterialChest) {
+					PossessedPlayer->GetMesh()->SetMaterial(1, PossessedPlayer->PossessedMaterialChest);
+				}
+
+				PossessedPlayer->bCurrentlyPossessed = true;
+				PossessedPlayer->IsKeyboardEnabled = true;
+
+			}
+		}
+
+		//2 Using IsA
+		/*if (HitResult.GetActor()->IsA(UInteractiveActor::StaticClass())) {
+			IInteractiveActor::Execute_Interact(HitResult.GetActor());
+		}*/
+
+		//3 using dynamical cast
+		//if(IInteractiveActor* InteractiveActor = Cast<IInteractiveActor>(HitResult.GetActor()))
+		//	IInteractiveActor::Execute_Interact(HitResult.GetActor());
+	}
+}
+
 
 void ADestructible_demoCharacter::TriggerCountdownToIdle()
 {

@@ -115,6 +115,20 @@ class ADestructible_demoCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* RightMeleeCollisionBox;
 
+	UPROPERTY(EditDefaultsOnly, Category = Procession)
+	class UMaterialInstance* DefaultMaterialBody;
+
+	UPROPERTY(EditDefaultsOnly, Category = Procession)
+	class UMaterialInstance* DefaultMaterialChest;
+
+	UPROPERTY(EditDefaultsOnly, Category = Procession)
+	class UMaterialInstance* PossessedMaterialBody;
+
+	UPROPERTY(EditDefaultsOnly, Category = Procession)
+	class UMaterialInstance* PossessedMaterialChest;
+
+
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Audio, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* PunchSoundCue;
 
@@ -220,7 +234,8 @@ public:
 	UFUNCTION()
 	void RunEnd();
 
-
+	UFUNCTION()
+	void Interact();
 
 	UFUNCTION()
 	void TriggerCountdownToIdle();
@@ -294,6 +309,7 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	bool bCurrentlyPossessed;
 	//UAudioComponent* PunchThrowAudioComponent;
 
 private:
@@ -342,6 +358,8 @@ private:
 	//friend class
 	friend class UPunchThrowAnimNotify;
 	friend class UPunchThrowAnimNotifyState;
+
+	AController* SavedController;
 
 
 	void Log(ELogLevel LogLevel, FString Message);

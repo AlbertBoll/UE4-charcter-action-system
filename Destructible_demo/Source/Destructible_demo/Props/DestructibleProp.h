@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "DestructibleComponent.h"
+#include "../InteractiveActor.h"
 #include "DestructibleProp.generated.h"
 
 UCLASS()
-class DESTRUCTIBLE_DEMO_API ADestructibleProp : public AActor
+class DESTRUCTIBLE_DEMO_API ADestructibleProp : public AActor, public IInteractiveActor
 {
 	GENERATED_BODY()
 	
@@ -30,6 +31,10 @@ public:
 
 	UFUNCTION()
 	void Destroy(float damage, FVector HitLocation, FVector ImpulseDirection, float Impulse);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Interactive)
+	void Interact(); //prototype declaration
+	virtual void Interact_Implementation() override; // actual implementation of interact method
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Destructible")
 	bool IsTriggerEnabled;
@@ -59,6 +64,7 @@ public:
 	int32 TriggerCountdown;
 
 	FTimerHandle TriggerDestroyTimerHandle;
+
 
 protected:
 	// Called when the game starts or when spawned

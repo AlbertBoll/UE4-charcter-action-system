@@ -11,3 +11,5 @@ By using Unreal engine 4, building character action system, including character'
 * 08 Setup simple HUD to show the character's combo.
 * 09 Refine charater action stances. Adding more fighting stances to character through state machine. 
 * 10 Continue to refine the character's movement, improve the movement logic
+* 11 Implement UE4 abstract interface to make Destructible Props, interactive Props more flexible.  
+
